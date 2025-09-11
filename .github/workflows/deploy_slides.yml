@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4 # Set up Node.js environment
       with:
-       node-version: '16' # Specify Node.js version 16
+       node-version: '20' # Specify Node.js version 20 (LTS)
     
     - name: Setup Pages
       uses: actions/configure-pages@v5 # Configure GitHub Pages
@@ -29,7 +29,7 @@ jobs:
       # Generate static slides with reveal-md and place them in the docs folder
         
     - name: Upload docs folder as artifact
-      uses: actions/upload-pages-artifact@v2 # Upload the docs folder as an artifact
+      uses: actions/upload-pages-artifact@v3 # Upload the docs folder as an artifact
       with:
        path: docs/ # Specify the path to the docs folder
 
@@ -39,7 +39,7 @@ jobs:
    steps:
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v2 # Deploy the site to GitHub Pages
+      uses: actions/deploy-pages@v4 # Deploy the site to GitHub Pages
    environment:
     name: github-pages # Specify the environment name
     url: ${{ steps.deployment.outputs.page_url }} # Set the URL of the deployed site
