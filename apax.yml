@@ -1,0 +1,6 @@
+name: "introduction-to-st"
+version: 0.0.0
+type: generic
+description: Simatic AX learning path introduction to ST programming
+scripts:
+    present: reveal-md slides.md --watch --theme theme/simatic-ax.css -css theme/simatic-ax.css
