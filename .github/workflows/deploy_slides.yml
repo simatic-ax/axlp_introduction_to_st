@@ -1,8 +1,7 @@
-name: Build and Deploy Slides
+name: Build Jekyll site
 on:
  push:
   branches: ["main"] # Trigger the workflow on push to the main branch
- workflow_dispatch: # Allow manual triggering
 permissions:
   contents: read # Read access to repository contents
   pages: write # Write access to GitHub Pages
@@ -17,14 +16,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4 # Set up Node.js environment
       with:
-       node-version: '20' # Specify Node.js version 20 (LTS)
+       node-version: '16' # Specify Node.js version 16
     
     - name: Setup Pages
-      id: pages
       uses: actions/configure-pages@v5 # Configure GitHub Pages
-      with:
-        enablement: true # Enable Pages if not already enabled
-      continue-on-error: true # Continue if Pages setup fails
     
     - name: Install reveal-md
       run: npm install -g reveal-md # Install reveal-md globally
@@ -37,24 +32,14 @@ jobs:
       uses: actions/upload-pages-artifact@v3 # Upload the docs folder as an artifact
       with:
        path: docs/ # Specify the path to the docs folder
-      if: steps.pages.outcome == 'success' # Only upload if Pages was configured successfully
-      
-    - name: Upload slides as regular artifact (fallback)
-      uses: actions/upload-artifact@v4
-      with:
-        name: slides
-        path: docs/
-      if: steps.pages.outcome != 'success' # Upload as regular artifact if Pages not available
 
   deploy:
    runs-on: ubuntu-latest # Use the latest Ubuntu runner
    needs: build # Run this job after the build job
-   if: always() # Always try to deploy
    steps:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4 # Deploy the site to GitHub Pages
-      continue-on-error: true # Don't fail if deployment fails
    environment:
     name: github-pages # Specify the environment name
     url: ${{ steps.deployment.outputs.page_url }} # Set the URL of the deployed site
