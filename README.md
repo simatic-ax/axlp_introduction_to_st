@@ -113,24 +113,9 @@ Professional-grade valve control:
 
 ## 🚀 Getting Started
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-org/axlp_introduction_to_st.git
-   cd axlp_introduction_to_st
-   ```
+You can view the interactive training presentation here:
 
-2. **Install dependencies:**
-   ```bash
-   apax install
-   ```
-
-3. **Start with the slides:**
-   - Open `slides/slides.md` in a markdown presentation tool
-   - Or use reveal.js for interactive presentation
-
-4. **Follow the exercises:**
-   - Start with `exercises/1_implement_valve/`
-   - Each exercise contains detailed instructions and solution references
+[Open Presentation](https://simatic-ax.github.io/axlp_introduction_to_st/#/)
 
 ## 📊 Assessment
 
