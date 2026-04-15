@@ -670,12 +670,10 @@ result2 := ADD(1.0, 2.0, 3.0);     // 3 parameters
     <table>
       <tr><th>Modifier</th><th>Visibility</th><th>Usage</th></tr>
       <tr><td>PRIVATE</td><td>Only within this FB</td><td>Internal implementation details</td></tr>
-      <tr><td>PROTECTED</td><td>This FB + derived classes</td><td>Inheritance scenarios</td></tr>
       <tr><td>PUBLIC</td><td>External access allowed</td><td>External interface</td></tr>
     </table>
     <p><strong>Default Access Level:</strong></p>
     <ul>
-      <li><strong>VAR section:</strong> PROTECTED by default</li>
       <li><strong>Best Practice:</strong> Explicitly declare access levels</li>
       <li><strong>Encapsulation:</strong> Use PRIVATE for internal state</li>
     </ul>
@@ -694,16 +692,13 @@ FUNCTION_BLOCK Valve
         internalState : INT;        // Only within this FB
         debugCounter : INT;
     END_VAR
-    VAR PROTECTED
-        baseValue : REAL;           // Inheritable
-    END_VAR
     VAR PUBLIC
         status : STRING;            // Externally accessible
     END_VAR
 END_FUNCTION_BLOCK
     </code></pre>
     <div class="definition">
-      <strong>Design Principle:</strong> Use the most restrictive access level possible - prefer PRIVATE over PROTECTED over PUBLIC
+      <strong>Design Principle:</strong> Use the most restrictive access level possible - prefer PRIVATE over PUBLIC
     </div>
   </div>
 </div>
@@ -1655,7 +1650,7 @@ END_TYPE
     <div class="kachel2">
       <p><strong>Professional Skills Gained:</strong></p>
       <ul>
-        <li><strong>Access Modifiers:</strong> PRIVATE, PROTECTED, PUBLIC for secure encapsulation</li>
+        <li><strong>Access Modifiers:</strong> PRIVATE, PUBLIC for secure encapsulation</li>
         <li><strong>Function Overloading:</strong> Type-based and signature-based implementations</li>
         <li><strong>Library Management:</strong> APAX package manager and dependency handling</li>
         <li><strong>Practical Application:</strong> Complete tank control system with advanced valve diagnostics</li>
