@@ -9,6 +9,6 @@ variables:
 devDependencies:
   "@ax/sdk": 2504.0.0
 dependencies:
-  "@ax/system-timer": 10.0.24
+  "@ax/system-timer": 10.4.16
 catalogs:
   "@ax/simatic-ax": ^2504.0.0
