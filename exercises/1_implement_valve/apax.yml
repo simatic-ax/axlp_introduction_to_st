@@ -7,6 +7,6 @@ variables:
   APAX_BUILD_ARGS:
     - "--debug" # Generate debug information for target "1500"
 devDependencies:
-  "@ax/sdk": 2510.10.0
+  "@ax/sdk": 2510.11.0
 catalogs:
   "@ax/simatic-ax": ^2510.0.0
