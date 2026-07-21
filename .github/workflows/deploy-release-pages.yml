@@ -77,7 +77,6 @@ jobs:
           # Current release is already built in docs/.
           cp -a docs/. "$RELEASE_DIR/"
           cp -a docs/. "$LATEST_DIR/"
-          cp -a theme "$OUTPUT_DIR/"
 
           # Build additional released versions from tags so the index can navigate all versions.
           git fetch --force --tags
@@ -111,131 +110,11 @@ jobs:
             git worktree remove "$TAG_WORKTREE" --force
           done
 
-          # Generate an index page with links to all released versions.
-          cat > "$OUTPUT_DIR/index.html" <<'HTML'
-          <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>Released Versions</title>
-            <link rel="stylesheet" href="theme/simatic-ax.css" />
-            <style>
-              body {
-                min-height: 100vh;
-                color: #ffffff;
-              }
-              .page {
-                max-width: 1100px;
-                margin: 0 auto;
-                min-height: 100vh;
-                padding: 64px 28px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                gap: 28px;
-              }
-              .subtitle {
-                margin: 0;
-                font-size: 1.25rem;
-                color: #d6ecff;
-              }
-              .actions {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 12px;
-              }
-              label {
-                font-weight: 700;
-                font-size: 1rem;
-                color: #d6ecff;
-              }
-              select, button {
-                font: inherit;
-                padding: 10px 14px;
-                border-radius: 8px;
-                border: 1px solid rgba(214, 236, 255, 0.45);
-                background: rgba(0, 0, 0, 0.2);
-                color: #ffffff;
-              }
-              select {
-                min-width: 220px;
-              }
-              button {
-                cursor: pointer;
-                background: linear-gradient(90deg, rgb(0, 190, 220), rgb(0, 215, 160));
-                border: none;
-                color: #002b3a;
-                font-weight: 800;
-              }
-              button:hover {
-                filter: brightness(1.05);
-              }
-              h2 {
-                margin: 12px 0 0 0;
-              }
-              ul {
-                margin: 0;
-                padding-left: 1.2rem;
-              }
-              li {
-                margin: 0.2rem 0;
-              }
-              a {
-                color: rgb(0, 215, 160);
-              }
-              a:hover {
-                color: rgb(0, 190, 220);
-              }
-            </style>
-          </head>
-          <body>
-            <main class="page">
-              <h1>Introduction to ST Programming</h1>
-              <p class="subtitle">Released Versions</p>
+          # Generate index page from repo-local template.
+          cp .github/pages/release-index.html "$OUTPUT_DIR/index.html"
 
-              <div class="actions">
-                <label for="version-select">Version:</label>
-                <select id="version-select"></select>
-                <button id="open-version" type="button">Open</button>
-              </div>
-
-              <h2>All Releases</h2>
-              <ul id="version-list"></ul>
-            </main>
-
-            <script>
-              const releases = __RELEASES__;
-              const repo = '__REPO__';
-              const select = document.getElementById('version-select');
-              const list = document.getElementById('version-list');
-              const openButton = document.getElementById('open-version');
-
-              for (const version of releases) {
-                const option = document.createElement('option');
-                option.value = version;
-                option.textContent = version;
-                select.appendChild(option);
-
-                const li = document.createElement('li');
-                const a = document.createElement('a');
-                a.href = `/${repo}/${version}/`;
-                a.textContent = version;
-                li.appendChild(a);
-                list.appendChild(li);
-              }
-
-              openButton.addEventListener('click', () => {
-                if (!select.value) {
-                  return;
-                }
-                window.location.href = `/${repo}/${select.value}/`;
-              });
-            </script>
-          </body>
-          </html>
-          HTML
+          mkdir -p "$OUTPUT_DIR/assets"
+          cp .github/pages/release-index.css "$OUTPUT_DIR/assets/release-index.css"
 
           RELEASES_JSON='['
           for i in "${!VERSIONS[@]}"; do
@@ -247,8 +126,19 @@ jobs:
           done
           RELEASES_JSON+=']'
 
+          APAX_DESCRIPTION="$(sed -nE 's/^[[:space:]]*description:[[:space:]]*"?([^"#]+)"?[[:space:]]*$/\1/p' apax.yml | head -n1)"
+          if [ -z "$APAX_DESCRIPTION" ]; then
+            APAX_DESCRIPTION="Introduction to ST Programming"
+          fi
+
+          DESCRIPTION_ESCAPED="$(printf '%s' "$APAX_DESCRIPTION" | sed -e 's/[\\&|]/\\\\&/g')"
+
+          # Ensure deployed root index references the copied CSS asset.
+          sed -i 's|href="simatic-ax.css"|href="assets/release-index.css"|g' "$OUTPUT_DIR/index.html"
+          sed -i 's|href="theme/simatic-ax.css"|href="assets/release-index.css"|g' "$OUTPUT_DIR/index.html"
           sed -i "s|__REPO__|$REPOSITORY_NAME|g" "$OUTPUT_DIR/index.html"
           sed -i "s|__RELEASES__|$RELEASES_JSON|g" "$OUTPUT_DIR/index.html"
+          sed -i "s|__DESCRIPTION__|$DESCRIPTION_ESCAPED|g" "$OUTPUT_DIR/index.html"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

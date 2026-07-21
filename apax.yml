@@ -1,7 +1,7 @@
 name: "introduction-to-st"
 version: 0.0.0
 type: generic
-description: Simatic AX learning path introduction to ST programming
+description: SIMATIC AX learning path - introduction to ST programming
 author: SIEMENS AG
 scripts:
     present: reveal-md slides.md --watch --theme theme/simatic-ax.css -css theme/simatic-ax.css

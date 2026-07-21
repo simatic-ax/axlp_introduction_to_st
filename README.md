@@ -7,6 +7,16 @@ A comprehensive learning path for automation engineers transitioning from TIA Po
 
 This repository contains a complete training module designed to teach ST programming concepts and SIMATIC AX development practices. The training covers everything from basic program organization to advanced system functions and practical automation applications.
 
+## Getting Started
+
+You can view the interactive training presentation here:
+
+Latest:
+[Open Presentation](https://simatic-ax.github.io/axlp_introduction_to_st/latest/#/)
+
+Select older versions
+[Select Version](https://simatic-ax.github.io/axlp_introduction_to_st/#/)
+
 ## Learning Objectives
 
 After completing this training, participants will be able to:
@@ -109,12 +119,6 @@ Extend the application with advanced features:
 Professional-grade valve control:
 - **ST06:** ValveClosedSensorMon with OnDelay timer functionality
 - Error state management and diagnostics
-
-## Getting Started
-
-You can view the interactive training presentation here:
-
-[Open Presentation](https://simatic-ax.github.io/axlp_introduction_to_st/#/)
 
 ## Assessment
 
