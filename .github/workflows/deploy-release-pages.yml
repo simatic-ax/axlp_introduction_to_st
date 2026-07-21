@@ -63,6 +63,9 @@ jobs:
 
       - name: Prepare release artifact structure
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
 
@@ -131,14 +134,88 @@ jobs:
             APAX_DESCRIPTION="Introduction to ST Programming"
           fi
 
-          DESCRIPTION_ESCAPED="$(printf '%s' "$APAX_DESCRIPTION" | sed -e 's/[\\&|]/\\\\&/g')"
+          RELEASE_DETAILS_JSON="$({
+            RELEASES_JSON="$RELEASES_JSON" GH_TOKEN="$GH_TOKEN" GH_REPOSITORY="$GH_REPOSITORY" node <<'NODE'
+            const releases = JSON.parse(process.env.RELEASES_JSON || '[]');
+            const token = process.env.GH_TOKEN;
+            const repo = process.env.GH_REPOSITORY;
+
+            async function fetchReleaseByTag(tag) {
+              const headers = {
+                Accept: 'application/vnd.github+json',
+                'User-Agent': 'release-pages-workflow'
+              };
+              if (token) {
+                headers.Authorization = `Bearer ${token}`;
+              }
+
+              const endpoint = `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`;
+              try {
+                const response = await fetch(endpoint, { headers });
+                if (!response.ok) {
+                  return {
+                    tag,
+                    publishedAt: '',
+                    url: `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
+                    body: ''
+                  };
+                }
+
+                const payload = await response.json();
+                return {
+                  tag,
+                  publishedAt: payload.published_at || '',
+                  url: payload.html_url || `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
+                  body: payload.body || ''
+                };
+              } catch {
+                return {
+                  tag,
+                  publishedAt: '',
+                  url: `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
+                  body: ''
+                };
+              }
+            }
+
+            (async () => {
+              const details = [];
+              for (const tag of releases) {
+                details.push(await fetchReleaseByTag(tag));
+              }
+              process.stdout.write(JSON.stringify(details));
+            })();
+            NODE
+          })"
 
           # Ensure deployed root index references the copied CSS asset.
           sed -i 's|href="simatic-ax.css"|href="assets/release-index.css"|g' "$OUTPUT_DIR/index.html"
           sed -i 's|href="theme/simatic-ax.css"|href="assets/release-index.css"|g' "$OUTPUT_DIR/index.html"
-          sed -i "s|__REPO__|$REPOSITORY_NAME|g" "$OUTPUT_DIR/index.html"
-          sed -i "s|__RELEASES__|$RELEASES_JSON|g" "$OUTPUT_DIR/index.html"
-          sed -i "s|__DESCRIPTION__|$DESCRIPTION_ESCAPED|g" "$OUTPUT_DIR/index.html"
+          RELEASES_JSON="$RELEASES_JSON" RELEASE_DETAILS_JSON="$RELEASE_DETAILS_JSON" APAX_DESCRIPTION="$APAX_DESCRIPTION" REPOSITORY_NAME="$REPOSITORY_NAME" OUTPUT_INDEX="$OUTPUT_DIR/index.html" node <<'NODE'
+          const fs = require('fs');
+
+          function escapeHtml(value) {
+            return String(value)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+          }
+
+          const outputPath = process.env.OUTPUT_INDEX;
+          const repositoryName = process.env.REPOSITORY_NAME;
+          const releaseListJson = process.env.RELEASES_JSON;
+          const releaseDetailsJson = process.env.RELEASE_DETAILS_JSON;
+          const description = escapeHtml(process.env.APAX_DESCRIPTION || '');
+
+          let html = fs.readFileSync(outputPath, 'utf8');
+          html = html.replace(/__REPO__/g, repositoryName);
+          html = html.replace(/__RELEASES__/g, releaseListJson);
+          html = html.replace(/__RELEASE_DETAILS__/g, releaseDetailsJson);
+          html = html.replace(/__DESCRIPTION__/g, description);
+          fs.writeFileSync(outputPath, html);
+          NODE
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
