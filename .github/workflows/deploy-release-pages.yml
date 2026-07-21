@@ -134,41 +134,25 @@ jobs:
             APAX_DESCRIPTION="Introduction to ST Programming"
           fi
 
-          RELEASE_DETAILS_JSON="$({
-            RELEASES_JSON="$RELEASES_JSON" GH_TOKEN="$GH_TOKEN" GH_REPOSITORY="$GH_REPOSITORY" node <<'NODE'
-            const releases = JSON.parse(process.env.RELEASES_JSON || '[]');
-            const token = process.env.GH_TOKEN;
-            const repo = process.env.GH_REPOSITORY;
+          RELEASE_DETAILS_FILE="$RUNNER_TEMP/release-details.json"
+          RELEASES_JSON="$RELEASES_JSON" GH_TOKEN="$GH_TOKEN" GH_REPOSITORY="$GH_REPOSITORY" node <<'NODE' > "$RELEASE_DETAILS_FILE"
+          const releases = JSON.parse(process.env.RELEASES_JSON || '[]');
+          const token = process.env.GH_TOKEN;
+          const repo = process.env.GH_REPOSITORY;
 
-            async function fetchReleaseByTag(tag) {
-              const headers = {
-                Accept: 'application/vnd.github+json',
-                'User-Agent': 'release-pages-workflow'
-              };
-              if (token) {
-                headers.Authorization = `Bearer ${token}`;
-              }
+          async function fetchReleaseByTag(tag) {
+            const headers = {
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'release-pages-workflow'
+            };
+            if (token) {
+              headers.Authorization = `Bearer ${token}`;
+            }
 
-              const endpoint = `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`;
-              try {
-                const response = await fetch(endpoint, { headers });
-                if (!response.ok) {
-                  return {
-                    tag,
-                    publishedAt: '',
-                    url: `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
-                    body: ''
-                  };
-                }
-
-                const payload = await response.json();
-                return {
-                  tag,
-                  publishedAt: payload.published_at || '',
-                  url: payload.html_url || `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
-                  body: payload.body || ''
-                };
-              } catch {
+            const endpoint = `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`;
+            try {
+              const response = await fetch(endpoint, { headers });
+              if (!response.ok) {
                 return {
                   tag,
                   publishedAt: '',
@@ -176,17 +160,33 @@ jobs:
                   body: ''
                 };
               }
-            }
 
-            (async () => {
-              const details = [];
-              for (const tag of releases) {
-                details.push(await fetchReleaseByTag(tag));
-              }
-              process.stdout.write(JSON.stringify(details));
-            })();
-            NODE
-          })"
+              const payload = await response.json();
+              return {
+                tag,
+                publishedAt: payload.published_at || '',
+                url: payload.html_url || `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
+                body: payload.body || ''
+              };
+            } catch {
+              return {
+                tag,
+                publishedAt: '',
+                url: `https://github.com/${repo}/releases/tag/${encodeURIComponent(tag)}`,
+                body: ''
+              };
+            }
+          }
+
+          (async () => {
+            const details = [];
+            for (const tag of releases) {
+              details.push(await fetchReleaseByTag(tag));
+            }
+            process.stdout.write(JSON.stringify(details));
+          })();
+          NODE
+          RELEASE_DETAILS_JSON="$(cat "$RELEASE_DETAILS_FILE")"
 
           # Ensure deployed root index references the copied CSS asset.
           sed -i 's|href="simatic-ax.css"|href="assets/release-index.css"|g' "$OUTPUT_DIR/index.html"
