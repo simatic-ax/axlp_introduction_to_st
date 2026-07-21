@@ -23,10 +23,22 @@
 
   <script>
     const releases = __RELEASES__;
+    const releaseDetails = __RELEASE_DETAILS__;
     const repo = '__REPO__';
     const select = document.getElementById('version-select');
     const list = document.getElementById('version-list');
     const openButton = document.getElementById('open-version');
+    const detailsByTag = new Map(releaseDetails.map((entry) => [entry.tag, entry]));
+
+    function getShortNotes(text) {
+      const normalized = (text || '').trim();
+      if (!normalized) {
+        return 'No changelog details available for this release.';
+      }
+      const lines = normalized.split('\n');
+      const shortened = lines.slice(0, 8).join('\n');
+      return lines.length > 8 ? `${shortened}\n...` : shortened;
+    }
 
     for (const version of releases) {
       const option = document.createElement('option');
@@ -35,10 +47,39 @@
       select.appendChild(option);
 
       const li = document.createElement('li');
+      li.className = 'release-item';
+
       const a = document.createElement('a');
       a.href = `/${repo}/${version}/`;
       a.textContent = version;
+      a.className = 'release-link';
       li.appendChild(a);
+
+      const details = detailsByTag.get(version);
+
+      const meta = document.createElement('p');
+      meta.className = 'release-meta';
+      if (details && details.publishedAt) {
+        const published = new Date(details.publishedAt).toLocaleDateString('en-CA');
+        meta.textContent = `Published: ${published}`;
+      } else {
+        meta.textContent = 'Published: n/a';
+      }
+      li.appendChild(meta);
+
+      const notes = document.createElement('pre');
+      notes.className = 'release-notes';
+      notes.textContent = getShortNotes(details ? details.body : '');
+      li.appendChild(notes);
+
+      const fullNotes = document.createElement('a');
+      fullNotes.className = 'release-notes-link';
+      fullNotes.href = details && details.url ? details.url : `https://github.com/${repo}/releases/tag/${version}`;
+      fullNotes.textContent = 'View full release notes';
+      fullNotes.target = '_blank';
+      fullNotes.rel = 'noopener noreferrer';
+      li.appendChild(fullNotes);
+
       list.appendChild(li);
     }
 
