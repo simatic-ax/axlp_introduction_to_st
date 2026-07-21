@@ -52,7 +52,11 @@ jobs:
           BASE_PATH: ${{ env.BASE_PATH }}
         run: |
           set -euo pipefail
+
+          cp slides.md slides.md.bak
+          sed -i "s|<h3> Version 0.0.0-placeholder</h3>|<h3> Version ${RELEASE_VERSION}</h3>|g" slides.md
           reveal-md slides.md --static docs --theme theme/simatic-ax.css -css theme/simatic-ax.css --assets-dir dist --staticDirs img
+          mv slides.md.bak slides.md
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -65,10 +69,124 @@ jobs:
           OUTPUT_DIR="$RUNNER_TEMP/pages-site"
           RELEASE_DIR="$OUTPUT_DIR/$RELEASE_VERSION"
           LATEST_DIR="$OUTPUT_DIR/latest"
+          WORKTREE_BASE="$RUNNER_TEMP/release-worktrees"
+          REPOSITORY_NAME="${{ github.event.repository.name }}"
 
-          mkdir -p "$RELEASE_DIR" "$LATEST_DIR"
+          mkdir -p "$RELEASE_DIR" "$LATEST_DIR" "$WORKTREE_BASE"
+
+          # Current release is already built in docs/.
           cp -a docs/. "$RELEASE_DIR/"
           cp -a docs/. "$LATEST_DIR/"
+
+          # Build additional released versions from tags so the index can navigate all versions.
+          git fetch --force --tags
+          mapfile -t VERSIONS < <(git tag --list 'v*' | sort -rV)
+
+          # Ensure the currently published release is part of the index list.
+          if [[ ! " ${VERSIONS[*]} " =~ " ${RELEASE_VERSION} " ]]; then
+            VERSIONS=("$RELEASE_VERSION" "${VERSIONS[@]}")
+          fi
+
+          for version in "${VERSIONS[@]}"; do
+            if [ "$version" = "$RELEASE_VERSION" ]; then
+              continue
+            fi
+
+            VERSION_DIR="$OUTPUT_DIR/$version"
+            if [ -d "$VERSION_DIR" ]; then
+              continue
+            fi
+
+            TAG_WORKTREE="$WORKTREE_BASE/$version"
+            git worktree add --detach "$TAG_WORKTREE" "refs/tags/$version"
+            (
+              cd "$TAG_WORKTREE"
+              cp slides.md slides.md.bak
+              sed -i "s|<h3> Version 0.0.0-placeholder</h3>|<h3> Version ${version}</h3>|g" slides.md
+              BASE_PATH="/$REPOSITORY_NAME/$version/" \
+                reveal-md slides.md --static "$VERSION_DIR" --theme theme/simatic-ax.css -css theme/simatic-ax.css --assets-dir dist --staticDirs img
+              mv slides.md.bak slides.md
+            )
+            git worktree remove "$TAG_WORKTREE" --force
+          done
+
+          # Generate an index page with links to all released versions.
+          cat > "$OUTPUT_DIR/index.html" <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Released Versions</title>
+            <style>
+              body {
+                font-family: Segoe UI, Arial, sans-serif;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 0 16px;
+                line-height: 1.5;
+              }
+              select, button {
+                font: inherit;
+                padding: 8px 10px;
+                margin-right: 8px;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Released Versions</h1>
+            <p>Select a version to open the corresponding release page.</p>
+            <label for="version-select">Version:</label>
+            <select id="version-select"></select>
+            <button id="open-version" type="button">Open</button>
+
+            <h2>All Releases</h2>
+            <ul id="version-list"></ul>
+
+            <script>
+              const releases = __RELEASES__;
+              const repo = '__REPO__';
+              const select = document.getElementById('version-select');
+              const list = document.getElementById('version-list');
+              const openButton = document.getElementById('open-version');
+
+              for (const version of releases) {
+                const option = document.createElement('option');
+                option.value = version;
+                option.textContent = version;
+                select.appendChild(option);
+
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `/${repo}/${version}/`;
+                a.textContent = version;
+                li.appendChild(a);
+                list.appendChild(li);
+              }
+
+              openButton.addEventListener('click', () => {
+                if (!select.value) {
+                  return;
+                }
+                window.location.href = `/${repo}/${select.value}/`;
+              });
+            </script>
+          </body>
+          </html>
+          HTML
+
+          RELEASES_JSON='['
+          for i in "${!VERSIONS[@]}"; do
+            version="${VERSIONS[$i]}"
+            if [ "$i" -gt 0 ]; then
+              RELEASES_JSON+=','
+            fi
+            RELEASES_JSON+="\"$version\""
+          done
+          RELEASES_JSON+=']'
+
+          sed -i "s|__REPO__|$REPOSITORY_NAME|g" "$OUTPUT_DIR/index.html"
+          sed -i "s|__RELEASES__|$RELEASES_JSON|g" "$OUTPUT_DIR/index.html"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
