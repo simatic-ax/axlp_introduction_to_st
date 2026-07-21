@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Released Versions</title>
+  <link rel="stylesheet" href="assets/release-index.css" />
+</head>
+<body>
+  <main class="page">
+    <h1>Learning path for:<br /><span class="heading-description">__DESCRIPTION__</span></h1>
+    <p class="subtitle">Released Versions</p>
+
+    <div class="actions">
+      <label for="version-select">Version:</label>
+      <select id="version-select"></select>
+      <button id="open-version" type="button">Open</button>
+    </div>
+
+    <h2>All Releases</h2>
+    <ul id="version-list"></ul>
+  </main>
+
+  <script>
+    const releases = __RELEASES__;
+    const repo = '__REPO__';
+    const select = document.getElementById('version-select');
+    const list = document.getElementById('version-list');
+    const openButton = document.getElementById('open-version');
+
+    for (const version of releases) {
+      const option = document.createElement('option');
+      option.value = version;
+      option.textContent = version;
+      select.appendChild(option);
+
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = `/${repo}/${version}/`;
+      a.textContent = version;
+      li.appendChild(a);
+      list.appendChild(li);
+    }
+
+    openButton.addEventListener('click', () => {
+      if (!select.value) {
+        return;
+      }
+      window.location.href = `/${repo}/${select.value}/`;
+    });
+  </script>
+</body>
+</html>
