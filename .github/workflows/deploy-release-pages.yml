@@ -54,7 +54,7 @@ jobs:
           set -euo pipefail
 
           cp slides.md slides.md.bak
-          sed -i "s|<h3> Version 0.0.0-placeholder</h3>|<h3> Version ${RELEASE_VERSION}</h3>|g" slides.md
+          sed -i "s|<h4>Version 0.0.0-placeholder</h4>|<h4>Version ${RELEASE_VERSION}</h4>|g" slides.md
           reveal-md slides.md --static docs --theme theme/simatic-ax.css -css theme/simatic-ax.css --assets-dir dist --staticDirs img
           mv slides.md.bak slides.md
 
@@ -102,7 +102,7 @@ jobs:
             (
               cd "$TAG_WORKTREE"
               cp slides.md slides.md.bak
-              sed -i "s|<h3> Version 0.0.0-placeholder</h3>|<h3> Version ${version}</h3>|g" slides.md
+              sed -i "s|<h4>Version 0.0.0-placeholder</h4>|<h4>Version ${version}</h4>|g" slides.md
               BASE_PATH="/$REPOSITORY_NAME/$version/" \
                 reveal-md slides.md --static "$VERSION_DIR" --theme theme/simatic-ax.css -css theme/simatic-ax.css --assets-dir dist --staticDirs img
               mv slides.md.bak slides.md
