@@ -1,0 +1,81 @@
+name: Deploy Reveal Release To GitHub Pages
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-release-pages-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout published release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Derive release and repository metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+          echo "BASE_PATH=/${{ github.event.repository.name }}/${{ github.event.release.tag_name }}/" >> "$GITHUB_ENV"
+
+      - name: Install reveal-md
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g reveal-md
+
+      - name: Generate slides with reveal-md into the docs folder
+        shell: bash
+        env:
+          BASE_PATH: ${{ env.BASE_PATH }}
+        run: |
+          set -euo pipefail
+          reveal-md slides.md --static docs --theme theme/simatic-ax.css -css theme/simatic-ax.css --assets-dir dist --staticDirs img
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare release artifact structure
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUTPUT_DIR="$RUNNER_TEMP/pages-site"
+          RELEASE_DIR="$OUTPUT_DIR/$RELEASE_VERSION"
+          LATEST_DIR="$OUTPUT_DIR/latest"
+
+          mkdir -p "$RELEASE_DIR" "$LATEST_DIR"
+          cp -a docs/. "$RELEASE_DIR/"
+          cp -a docs/. "$LATEST_DIR/"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/pages-site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
