@@ -13,7 +13,8 @@ revealOptions:
 <h2>Learning path</h2>
 <h1>SIMATIC AX</h1>
 <h3>Introduction to ST Programming</h3>
-<h3> Version 0.0.0-placeholder</h3>
+<div style="height: 0.6em;"></div>
+<h4>Version 0.0.0-placeholder</h4>
 ---
 <div class="grid-slide-2x1-container">
   <div class="grid-slide-header">
