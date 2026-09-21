@@ -765,15 +765,15 @@ PROGRAM ExampleProgram
     VAR
         v2 : Valve;             // Program local instance
     END_VAR
-    VAR_EXTERNAL              // Import global variables/instances
+    VAR_EXTERNAL // Import global variables/instances
         v1 : Valve;
         v1ctrlOpen : BOOL;
-        v1isClosed : BOOL; 
+        v1isClosed : BOOL;
     END_VAR
-    
+
     // Call function block instances
-    v1();                     // Call global instance
-    v2();                     // Call program local instance
+    v1(); // Call global instance
+    v2(); // Call program local instance
 END_PROGRAM
     </code></pre>
   </div>
